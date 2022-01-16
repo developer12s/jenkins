@@ -1,5 +1,5 @@
 variable ami{
-default="
+default="ami-08e4e35cccc6189f4"
 }
 variable type{
 default="t2.micro"
