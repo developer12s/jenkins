@@ -8,5 +8,5 @@ variable name{
 default="My-Ec2"
 }
 variable region{
-  default="us-east-1"
+  default="ap-northeast-1"
 }
