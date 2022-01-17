@@ -4,7 +4,7 @@ provider "aws"{
 resource "aws_instance" "web" {
   ami           = var.ami
   instance_type = var.type
-  tags{
+  tags={
     Name=var.name
   }
 }
