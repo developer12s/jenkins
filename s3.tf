@@ -1,5 +1,5 @@
 provider "aws"{
-  region="us-west-2"
+  region="ap-northeast-1"
 }
 resource "aws_s3_bucket" "_ab" {
   bucket =var.name
