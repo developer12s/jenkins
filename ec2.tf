@@ -4,7 +4,7 @@ provider "aws"{
 locals{
 serverconfig = [
   for srv in var.ami : [
-    for i in range(1) : {
+    for i in 1 : {
   ami = srv.ami
     }
   ]
