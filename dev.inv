@@ -1,2 +1,2 @@
 [webservers]
-172.31.36.131 ansible_user=ec2-user ansible_ssh_private_key_file="/root/.ssh/lokesh-new-key.pem"
+172.31.36.131 ansible_user=ec2-user 
