@@ -1,5 +1,8 @@
 ---
-- hosts: webservers 
+- hosts: 
+    webservers:
+      ansible_host: 172.31.45.157
+      ansible_user: ec2-user
   become: True
   tasks:
     - name: Install packages
