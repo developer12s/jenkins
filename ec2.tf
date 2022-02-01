@@ -9,5 +9,5 @@ resource "aws_instance" "web" {
   tags={
     Name=var.name
   }
-  key_name = "lokesh-vm-key"
+  key_name = "pipeline-test"
 }
