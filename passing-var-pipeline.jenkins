@@ -1,0 +1,121 @@
+def privateip
+pipeline{
+    agent any
+    tools{
+        terraform 'terraform-11'
+        
+    }
+     parameters{
+         string(name:'server', defaultValue:'demo-server',description: 'creating the server by getting user input')
+         choice(name:'action',choices: ['fmt','apply','destroy'],description:'creating and destroy the infra')
+         string(name:'Name', defaultValue: 'default',description: 'creating the os type by getting user input') 
+     }
+       environment{
+       AWS_DEFAULT_REGION="ap-northeast-1"
+       TF_VAR_ID="${env.ami}"
+   }
+     stages{
+        stage('git checkout'){
+            steps{
+               checkout([$class: 'GitSCM', branches: [[name: 'main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/developer12s/jenkins.git']]])
+            }
+        }
+stage('Parse the CSV') {
+        steps {
+            script {
+                //dir ('script-test') {
+                    if (fileExists('os.csv')) {
+                        echo ' os.csv found'
+                            readFile("os.csv").eachLine { line, count ->
+                            def fields = line.split(',')
+                            echo 'fields'+fields
+                            def nm="${Name}"
+                            echo 'name:'+nm
+                            if(fields[0] == nm )
+                            {
+                                
+                                withCredentials([aws(credentialsId: 'terraform-pipeline-demo')]){
+                                env.TF_VARid=fields[1]
+                                echo 'tf_var_id:'+"${env.TF_VARid}" 
+                                script{
+                                echo 'inside script linux id:'+"${env.TF_VARid}" 
+                                sh 'terraform init'
+                                sh label:'running plan command',script: 'terraform plan  -input=false -out tfplan -var name=${server}'
+                                sh label:'running show command',script: 'terraform show -no-color tfplan > tfplan.txt'
+                                sh 'terraform "${action}"  -input=false  -var name=${server} -var ami=${TF_VARid} --auto-approve'
+                                }
+                            }
+                                echo 'successfully!!!'
+                            }
+                            else if(fields[2] == nm)
+                            {
+                                withCredentials([aws(credentialsId: 'terraform-pipeline-demo')]){
+                                env.TF_VARid=fields[3]
+                                echo 'windows ami!!!' +"${env.TF_VARid}"
+                                script{
+                                echo 'inside script windows ami:'+"${env.TF_VARid}" 
+                                sh 'terraform init'
+                                sh label:'running plan command',script: 'terraform plan  -input=false -out tfplan -var name=${server}'
+                                sh label:'running show command',script: 'terraform show -no-color tfplan > tfplan.txt'
+                                sh 'terraform "${action}"  -var name=${server}  -var ami=${TF_VARid} --auto-approve'
+                                
+                                }
+                            }
+                            }
+                            else
+                            {
+                                echo 'enter the correct os'
+                            }
+                            //for(String item: fields) {
+                                
+                                //println 'items:'+item
+                                //println ' you are parsing line : ' + count
+                                //echo "priniting fields:"+ fields[0]+ ': ' + fields[1];
+                                
+                                //}
+                    }
+
+                    } 
+                    else {
+                        echo 'os.csv Not found. Failing.'
+                    }
+                }
+            }
+        }
+        // stage('s3 apply'){
+           //     steps{
+             //       withCredentials([aws(credentialsId: 'terraform-pipeline-demo')]){
+               //     sh label: 'terraform apply to s3',script:'terraform ${act} -var name=${bucket} --auto-approve'
+               //     }
+               // }
+          //  }
+        
+}
+            
+ post{
+
+        always{
+
+            archiveArtifacts artifacts: 'tfplan.txt'
+
+        }
+
+        success{
+
+            echo 'pipeline runned and server created successfully!!!'
+            echo 'Going to perform the post task to server'
+           script{
+            privateip = sh(returnStdout: true, script: "terraform output instance_ips").trim()
+            echo 'printing the instance private ip:'+  privateip
+            //destdir="/var/lib/jenkins/workspace/script-test/dev.inv"
+            //if("$destdir"){
+            //echo "${privateip}" > "$destdir"
+            //} 
+            ansiblePlaybook credentialsId: 'private-key', disableHostKeyChecking: true, installation: 'ansible-1', inventory: 'dev.inv', playbook: 'playbook.yml'
+           }
+
+        }
+
+    }
+
+ }
